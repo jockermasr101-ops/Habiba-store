@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>لوحة التحكم | حبيبة ستور</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0a0a0a;--paper:#fff;--surface:#f7f6f4;--line:#e5e1d8;--muted:#847d70;--accent:#6b2737;--accent-soft:#f5e8ea;--radius:10px;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Tajawal',sans-serif;}
+  .display{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:700;}
+  body{background:var(--surface);color:var(--ink);min-height:100vh;padding:20px;}
+  input,button{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+
+  .login-wrap{min-height:calc(100vh - 40px);display:flex;align-items:center;justify-content:center;}
+  .login-card{background:#fff;padding:44px 36px;width:100%;max-width:380px;border:1px solid var(--line);}
+  .login-card h2{text-align:center;margin-bottom:26px;font-size:1.4rem;}
+  .form-group{margin-bottom:16px;}
+  label{display:block;margin-bottom:6px;font-weight:600;font-size:.82rem;color:var(--muted);}
+  input{width:100%;padding:11px 12px;border:1px solid var(--line);font-size:.92rem;outline:none;border-radius:var(--radius);}
+  input:focus{border-color:var(--ink);}
+  .btn{border-radius:var(--radius);cursor:pointer;font-weight:600;border:none;transition:opacity .15s;}
+  .btn:disabled{opacity:.55;cursor:not-allowed;}
+  .btn-black{background:var(--ink);color:#fff;width:100%;padding:13px;font-size:.92rem;}
+  .error{color:var(--accent);font-size:.83rem;margin-top:12px;text-align:center;display:none;}
+
+  #dashboard{display:none;max-width:1240px;margin:0 auto;}
+  .dash-header{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);padding:20px 26px;margin-bottom:22px;}
+  .logout{background:var(--accent);color:#fff;padding:9px 18px;font-size:.85rem;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px;}
+  .stat-card{background:#fff;padding:18px 20px;border:1px solid var(--line);border-right:3px solid var(--ink);}
+  .stat-card p{font-size:.8rem;color:var(--muted);margin-bottom:4px;}
+  .stat-card h5{font-size:1.55rem;font-weight:700;}
+
+  .main-content-layout{display:grid;grid-template-columns:1fr 1.35fr;gap:20px;}
+  @media(max-width:900px){.main-content-layout{grid-template-columns:1fr;}}
+  .panel{background:#fff;border:1px solid var(--line);padding:24px;}
+  .panel h4{margin-bottom:18px;font-size:1.02rem;}
+  .preview-box{width:100%;height:140px;background:var(--surface);border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px;color:var(--muted);font-size:.8rem;}
+  .preview-box img{width:100%;height:100%;object-fit:cover;}
+  .form-actions{display:flex;gap:10px;margin-top:4px;}
+  .btn-ghost{background:#fff;border:1px solid var(--line);padding:13px;flex:1;}
+
+  .table-wrapper{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th,td{padding:12px;border-bottom:1px solid var(--line);text-align:right;}
+  th{background:var(--surface);font-weight:600;font-size:.8rem;color:var(--muted);}
+  td img{width:38px;height:48px;object-fit:cover;}
+  .row-actions{display:flex;gap:8px;}
+  .row-actions button{padding:6px 10px;font-size:.78rem;border:1px solid var(--line);background:#fff;cursor:pointer;}
+  .row-actions .del{color:var(--accent);border-color:var(--accent-soft);}
+  .toast-stack{position:fixed;bottom:20px;right:20px;left:20px;z-index:300;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+  .toast{background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--radius);font-size:.85rem;max-width:360px;text-align:center;opacity:0;transform:translateY(8px);transition:all .25s;}
+  .toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <h2 class="display">إدارة حبيبة ستور</h2>
+    <div class="form-group">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="email-field" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>كلمة المرور</label>
+      <input type="password" id="pass-field" autocomplete="current-password">
+    </div>
+    <button class="btn btn-black" id="login-btn" onclick="processAdminLogin()">دخول</button>
+    <div class="error" id="error-alert">البريد الإلكتروني أو كلمة المرور غير صحيحة.</div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="dash-header">
+    <h3 class="display">لوحة تحكم حبيبة ستور</h3>
+    <button class="btn logout" onclick="processAdminLogout()">تسجيل الخروج</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><p>إجمالي المنتجات المعروضة</p><h5 id="total-items-counter">0</h5></div>
+    <div class="stat-card"><p>تكلفة الشحن لكل الطلبات</p><h5>مجاني</h5></div>
+    <div class="stat-card"><p>طريقة الدفع</p><h5>الدفع عند الاستلام</h5></div>
+  </div>
+
+  <div class="main-content-layout">
+    <div class="panel">
+      <h4 id="form-title">➕ إضافة منتج جديد</h4>
+      <div class="form-group"><label>اسم المنتج</label><input type="text" id="p-name-input"></div>
+      <div class="form-group"><label>السعر الموحد (ج.م)</label><input type="number" id="p-price-input"></div>
+      <div class="form-group">
+        <label>صورة المنتج</label>
+        <div class="preview-box" id="preview-box">لا توجد صورة</div>
+        <input type="file" id="p-file-input" accept="image/*">
+      </div>
+      <div class="form-group">
+        <label>فيديو المنتج (اختياري)</label>
+        <div class="preview-box" id="video-preview-box" style="height:auto;padding:10px;">لا يوجد فيديو</div>
+        <input type="file" id="p-video-input" accept="video/*">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-black" id="submit-product-btn" style="flex:2;padding:13px;">حفظ المنتج</button>
+        <button class="btn btn-ghost" id="cancel-edit-btn" style="display:none;" onclick="resetForm()">إلغاء</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>📦 المنتجات الحالية</h4>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>صورة</th><th>الاسم</th><th>السعر</th><th>فيديو</th><th>إدارة</th></tr></thead>
+          <tbody id="products-table-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">جاري التحميل...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toast-stack"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, updateDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDAIOOMiN_qZjCzvmhw6HAz6182yizsXYM",
+  authDomain: "habiba-store-e70d2.firebaseapp.com",
+  projectId: "habiba-store-e70d2",
+  storageBucket: "habiba-store-e70d2.firebasestorage.app",
+  messagingSenderId: "559375815306",
+  appId: "1:559375815306:web:c1f0a6306349d0d289d373",
+  measurementId: "G-LERSRHQW3M"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let allProducts = [];
+let editingId = null;
+
+function showToast(msg){
+  const stack = document.getElementById("toast-stack");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  stack.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); }, 2800);
+}
+const fmt = (n) => Number(n || 0).toLocaleString("ar-EG") + " ج.م";
+
+window.processAdminLogin = async function(){
+  const email = document.getElementById("email-field").value.trim();
+  const pass = document.getElementById("pass-field").value;
+  const btn = document.getElementById("login-btn");
+  document.getElementById("error-alert").style.display = "none";
+  btn.disabled = true; btn.textContent = "جاري الدخول...";
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){
+    document.getElementById("error-alert").style.display = "block";
+  } finally {
+    btn.disabled = false; btn.textContent = "دخول";
+  }
+}
+
+window.processAdminLogout = function(){ signOut(auth); }
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    document.getElementById("login-wrap").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+    listenToProducts();
+  } else {
+    document.getElementById("login-wrap").style.display = "flex";
+    document.getElementById("dashboard").style.display = "none";
+  }
+});
+
+function listenToProducts(){
+  onSnapshot(collection(db, "products"), (snap) => {
+    allProducts = [];
+    snap.forEach(d => allProducts.push({ id: d.id, ...d.data() }));
+    renderTable();
+  });
+}
+
+function renderTable(){
+  const tbody = document.getElementById("products-table-body");
+  document.getElementById("total-items-counter").innerText = allProducts.length;
+
+  if(allProducts.length === 0){
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">لا توجد منتجات بعد.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allProducts.map(p => `
+    <tr>
+      <td><img src="${p.imgUrl}" alt="${p.name}"></td>
+      <td>${p.name}</td>
+      <td>${fmt(p.currentPrice)}</td>
+      <td>${p.videoUrl ? '🎥' : '—'}</td>
+      <td>
+        <div class="row-actions">
+          <button onclick="editProduct('${p.id}')">تعديل</button>
+          <button class="del" onclick="deleteProduct('${p.id}')">حذف</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("p-file-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const box = document.getElementById("preview-box");
+  if(!file){ box.textContent = "لا توجد صورة"; return; }
+  box.innerHTML = `<img src="${URL.createObjectURL(file)}">`;
+});
+
+document.getElementById("p-video-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const box = document.getElementById("video-preview-box");
+  if(!file){ box.textContent = "لا يوجد فيديو"; return; }
+  box.innerHTML = `<video src="${URL.createObjectURL(file)}" controls style="width:100%;max-height:160px;"></video>`;
+});
+
+window.editProduct = function(id){
+  const p = allProducts.find(x => x.id === id);
+  if(!p) return;
+  editingId = id;
+  document.getElementById("p-name-input").value = p.name || "";
+  document.getElementById("p-price-input").value = p.currentPrice || "";
+  document.getElementById("preview-box").innerHTML = `<img src="${p.imgUrl}">`;
+  if(p.videoUrl){
+    document.getElementById("video-preview-box").innerHTML = `<video src="${p.videoUrl}" controls style="width:100%;max-height:160px;"></video>`;
+  } else {
+    document.getElementById("video-preview-box").textContent = "لا يوجد فيديو";
+  }
+  document.getElementById("form-title").textContent = "✏️ تعديل المنتج";
+  document.getElementById("submit-product-btn").textContent = "تحديث المنتج";
+  document.getElementById("cancel-edit-btn").style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+window.resetForm = function(){
+  editingId = null;
+  document.getElementById("p-name-input").value = "";
+  document.getElementById("p-price-input").value = "";
+  document.getElementById("p-file-input").value = "";
+  document.getElementById("preview-box").innerHTML = "لا توجد صورة";
+  document.getElementById("p-video-input").value = "";
+  document.getElementById("video-preview-box").textContent = "لا يوجد فيديو";
+  document.getElementById("form-title").textContent = "➕ إضافة منتج جديد";
+  document.getElementById("submit-product-btn").textContent = "حفظ المنتج";
+  document.getElementById("cancel-edit-btn").style.display = "none";
+}
+
+window.deleteProduct = async function(id){
+  if(!confirm("تأكيد حذف هذا المنتج نهائياً؟")) return;
+  try{
+    await deleteDoc(doc(db, "products", id));
+    showToast("تم حذف المنتج");
+  } catch(e){
+    showToast("حدث خطأ أثناء الحذف");
+  }
+}
+
+document.getElementById("submit-product-btn").addEventListener("click", async () => {
+  const title = document.getElementById("p-name-input").value.trim();
+  const price = document.getElementById("p-price-input").value;
+  const fileList = document.getElementById("p-file-input").files;
+  const videoList = document.getElementById("p-video-input").files;
+  const btn = document.getElementById("submit-product-btn");
+
+  if(!title || !price || (!editingId && fileList.length === 0)){
+    showToast("اسم المنتج، السعر، والصورة إلزامية");
+    return;
+  }
+
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = "جاري الحفظ...";
+
+  try{
+    let cloudUrl = null;
+    if(fileList.length > 0){
+      const imgRef = ref(storage, 'products/' + Date.now() + '_' + fileList[0].name);
+      const snapshot = await uploadBytes(imgRef, fileList[0]);
+      cloudUrl = await getDownloadURL(snapshot.ref);
+    }
+
+    let videoUrl = null;
+    if(videoList.length > 0){
+      btn.textContent = "جاري رفع الفيديو...";
+      const vidRef = ref(storage, 'products/videos/' + Date.now() + '_' + videoList[0].name);
+      const vidSnapshot = await uploadBytes(vidRef, videoList[0]);
+      videoUrl = await getDownloadURL(vidSnapshot.ref);
+    }
+
+    const payload = {
+      name: title,
+      currentPrice: price
+    };
+    if(cloudUrl) payload.imgUrl = cloudUrl;
+    if(videoUrl) payload.videoUrl = videoUrl;
+
+    if(editingId){
+      await updateDoc(doc(db, "products", editingId), payload);
+      showToast("تم تحديث المنتج بنجاح");
+    } else {
+      payload.imgUrl = cloudUrl;
+      payload.createdAt = Date.now();
+      await addDoc(collection(db, "products"), payload);
+      showToast("تم نشر المنتج بنجاح");
+    }
+    resetForm();
+  } catch(e){
+    showToast("حدث خطأ أثناء حفظ المنتج");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+</script>
+</body>
+</html>
